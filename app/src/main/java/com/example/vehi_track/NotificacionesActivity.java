@@ -18,6 +18,11 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Centro de Alertas y Notificaciones.
+ * Esta actividad consolida en una única interfaz dos fuentes de datos distintas:
+ * Documentación legal (SOAT/Tecno) y Mantenimientos mecánicos pendientes.
+ */
 public class NotificacionesActivity extends BaseActivity
         implements NotificacionAdapter.OnNotificacionClickListener {
 
@@ -31,13 +36,13 @@ public class NotificacionesActivity extends BaseActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. Inflar el diseño
+        // 1. INFLADO CON HERENCIA: Mantiene la estructura del menú lateral (BaseActivity)
         establecerContenido(R.layout.activity_notificaciones);
 
         db = FirebaseFirestore.getInstance();
         idUsuario = FirebaseAuth.getInstance().getUid();
 
-        // 2. Configurar Toolbar
+        // 2. CONFIGURACIÓN DE LA BARRA DE HERRAMIENTAS
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
@@ -46,23 +51,29 @@ public class NotificacionesActivity extends BaseActivity
             }
         }
 
-        // 3. Configurar RecyclerView
+        // 3. CONFIGURACIÓN DEL LISTADO (RECYCLERVIEW)
         rvNotif = findViewById(R.id.rvNotificaciones);
         rvNotif.setLayoutManager(new LinearLayoutManager(this));
         listaNotificaciones = new ArrayList<>();
 
-        // 4. Inicializar Adapter
+        // 4. INICIALIZACIÓN DEL ADAPTADOR CON ESCUCHADOR DE CLICS
+        // Se pasa 'this' como listener para manejar las acciones táctiles en cada alerta.
         adapter = new NotificacionAdapter(listaNotificaciones, this);
         rvNotif.setAdapter(adapter);
 
-        // 5. Cargar datos desde Firebase
+        // 5. CARGA SINCRONIZADA DE DATOS
         cargarDatosCombinados();
     }
 
+    /**
+     * Gestión Multifuente:
+     * Ejecuta dos consultas simultáneas a Firestore para traer alertas legales
+     * y tareas técnicas sin realizar, garantizando una vista integral de la moto.
+     */
     private void cargarDatosCombinados() {
         if (idUsuario == null) return;
 
-        // Escuchar Notificaciones (SOAT / Tecno)
+        // FLUJO 1: Alertas de Documentos (SOAT / Tecnomecánica)
         db.collection("notificaciones")
                 .whereEqualTo("id_usuario", idUsuario)
                 .addSnapshotListener((value, error) -> {
@@ -70,7 +81,7 @@ public class NotificacionesActivity extends BaseActivity
                     actualizarLista(value, true);
                 });
 
-        // Escuchar Mantenimientos (Solo los que no tienen fecha de realización)
+        // FLUJO 2: Alertas de Taller (Mantenimientos que no tienen 'fecha_realizacion')
         db.collection("mantenimientos")
                 .whereEqualTo("id_usuario", idUsuario)
                 .whereEqualTo("fecha_realizacion", null)
@@ -80,10 +91,16 @@ public class NotificacionesActivity extends BaseActivity
                 });
     }
 
+    /**
+     * Normalización de Datos (Data Mapping):
+     * Este método sincronizado combina los dos flujos de Firebase en una sola lista.
+     * Convierte objetos 'Mantenimiento' en objetos 'Notificacion' para uniformidad visual.
+     */
     private synchronized void actualizarLista(com.google.firebase.firestore.QuerySnapshot value, boolean esNotifRaiz) {
         if (value == null) return;
 
-        // Limpieza selectiva para evitar duplicados al combinar flujos
+        // LIMPIEZA SELECTIVA: Elimina registros previos según el flujo para evitar duplicidad
+        // al recibir actualizaciones en tiempo real de cualquiera de las dos colecciones.
         if (esNotifRaiz) {
             listaNotificaciones.removeIf(n -> !n.getTitulo().startsWith("Mantenimiento:"));
         } else {
@@ -92,12 +109,12 @@ public class NotificacionesActivity extends BaseActivity
 
         for (QueryDocumentSnapshot doc : value) {
             if (esNotifRaiz) {
-                // Mapeo directo para SOAT/Tecno
+                // Conversión directa para alertas de documentos
                 Notificacion n = doc.toObject(Notificacion.class);
                 n.setId(doc.getId());
                 listaNotificaciones.add(n);
             } else {
-                // Conversión de Mantenimiento a Notificación para la interfaz
+                // ADAPTACIÓN DE MODELO: Transforma un Mantenimiento técnico en una Notificación visual
                 Mantenimiento m = doc.toObject(Mantenimiento.class);
                 Notificacion n = new Notificacion(
                         doc.getId(),
@@ -106,21 +123,24 @@ public class NotificacionesActivity extends BaseActivity
                         m.getFecha_programada(),
                         m.getPlaca()
                 );
-                n.setIdVehiculo(m.getId_vehiculo()); // Importante para el modal
+                n.setIdVehiculo(m.getId_vehiculo()); // Vinculación necesaria para el modal de edición
                 listaNotificaciones.add(n);
             }
         }
 
-        // Refrescar la vista
+        // Sincronización final con la interfaz de usuario
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
     }
 
-    // --- ACCIÓN AL TOCAR UNA ALERTA ---
+    /**
+     * Interacción con el Usuario:
+     * Al tocar una alerta, se despliega el BottomSheetDialog (Modal) para
+     * actualizar fechas o confirmar la realización de un mantenimiento.
+     */
     @Override
     public void onNotificacionClick(Notificacion notif) {
-        // Mostramos el BottomSheetDialog que creamos
         try {
             ModalActualizarFecha modal = new ModalActualizarFecha(notif);
             modal.show(getSupportFragmentManager(), "ModalActualizarFecha");
