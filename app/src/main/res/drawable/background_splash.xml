@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@color/azul_oscuro_vehi" />
+
+    <item
+        android:width="240dp"
+        android:height="240dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@mipmap/vehitrack4"
+            android:filter="true"
+            android:tintMode="multiply"/> </item>
+
+</layer-list>

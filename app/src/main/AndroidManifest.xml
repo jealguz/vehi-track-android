@@ -2,13 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="replace"/>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/vehitrack4"
         android:supportsRtl="true"
         android:theme="@style/Theme.Vehitrack">
 
@@ -21,7 +27,54 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".RegisterActivity" />
+        <activity android:name=".RegisterActivity" android:exported="false" />
+        <activity android:name=".DashboardActivity" android:exported="false" />
+        <activity android:name=".MisVehiculosActivity" android:exported="false" />
+
+        <activity
+            android:name=".RegistrarVehiculoActivity"
+            android:exported="false"
+            android:label="Registro Nuevo Vehículo" />
+
+        <activity
+            android:name=".ListarMantenimientosActivity"
+            android:exported="false"
+            android:label="Historial de Mantenimientos" />
+
+        <activity
+            android:name=".RegistrarMantenimientoActivity"
+            android:exported="false"
+            android:label="Nuevo Mantenimiento" />
+
+        <activity
+            android:name=".ListarCombustibleActivity"
+            android:exported="false"
+            android:label="Historial de Combustible" />
+
+        <activity
+            android:name=".RegistrarCombustibleActivity"
+            android:exported="false"
+            android:label="Registrar Tanqueo" />
+
+        <activity
+            android:name=".NotificacionesActivity"
+            android:exported="false"
+            android:label="Centro de Avisos" />
+
+        <activity
+            android:name=".ReportesActivity"
+            android:exported="false"
+            android:label="Exportar Reportes" />
+
+        <activity
+            android:name=".TalleresCercanosActivity"
+            android:exported="false"
+            android:label="Mapa de Talleres" />
+
+        <activity
+            android:name=".AjustesActivity"
+            android:exported="false"
+            android:label="Configuración" />
 
     </application>
 
