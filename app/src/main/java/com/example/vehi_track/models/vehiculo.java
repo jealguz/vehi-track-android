@@ -1,36 +1,34 @@
 package com.example.vehi_track.models;
 
-/**
- * Clase Modelo Vehiculo: Adaptada para Android y Firebase Firestore.
- * @author Jeison Guzman
- */
+import com.google.firebase.Timestamp;
+
 public class vehiculo {
 
-    // En Firebase usamos String para los IDs para mayor flexibilidad
     private String id_vehiculo;
-    private String id_usuario;        // El UID del dueño que viene de Firebase Auth
+    private String id_usuario;
     private String tipo;
     private String marca;
     private String modelo;
     private int anio;
     private String placa;
-    private int kilometraje_actual;
-
-    // REGLA DE ORO: En Firebase es mejor usar String (ISO 8601) o Long para fechas
-    // Evitamos java.sql.Date porque da errores de compatibilidad en Android
-    private String vencimiento_soat;
-    private String vencimiento_rtm;
-
-    // Atributos para lógica de alertas
+    private int kilometraje;
+    private Timestamp vencimiento_soat;
+    private Timestamp vencimiento_rtm;
     private String estadoSoat;
     private String estadoRtm;
 
-    /**
-     * Constructor vacío: Obligatorio para Firebase
-     */
     public vehiculo() {}
 
-    // --- GETTERS Y SETTERS ---
+    // --- GETTERS Y SETTERS QUE ESTÁN BIEN ---
+
+    public String getPlaca() { return placa; }
+    public void setPlaca(String placa) { this.placa = placa; }
+
+    public Timestamp getVencimiento_soat() { return vencimiento_soat; }
+    public void setVencimiento_soat(Timestamp vencimiento_soat) { this.vencimiento_soat = vencimiento_soat; }
+
+    public Timestamp getVencimiento_rtm() { return vencimiento_rtm; }
+    public void setVencimiento_rtm(Timestamp vencimiento_rtm) { this.vencimiento_rtm = vencimiento_rtm; }
 
     public String getId_vehiculo() { return id_vehiculo; }
     public void setId_vehiculo(String id_vehiculo) { this.id_vehiculo = id_vehiculo; }
@@ -47,24 +45,41 @@ public class vehiculo {
     public String getModelo() { return modelo; }
     public void setModelo(String modelo) { this.modelo = modelo; }
 
-    public int getAnio() { return anio; }
-    public void setAnio(int anio) { this.anio = anio; }
-
-    public String getPlaca() { return placa; }
-    public void setPlaca(String placa) { this.placa = placa; }
-
-    public int getKilometraje_actual() { return kilometraje_actual; }
-    public void setKilometraje_actual(int kilometraje_actual) { this.kilometraje_actual = kilometraje_actual; }
-
-    public String getVencimiento_soat() { return vencimiento_soat; }
-    public void setVencimiento_soat(String vencimiento_soat) { this.vencimiento_soat = vencimiento_soat; }
-
-    public String getVencimiento_rtm() { return vencimiento_rtm; }
-    public void setVencimiento_rtm(String vencimiento_rtm) { this.vencimiento_rtm = vencimiento_rtm; }
-
     public String getEstadoSoat() { return estadoSoat; }
     public void setEstadoSoat(String estadoSoat) { this.estadoSoat = estadoSoat; }
 
     public String getEstadoRtm() { return estadoRtm; }
     public void setEstadoRtm(String estadoRtm) { this.estadoRtm = estadoRtm; }
+
+    // --- AJUSTES DE SEGURIDAD (PARA EVITAR EL CRASH) ---
+
+    public int getAnio() { return anio; }
+
+    // Cambiamos a Object para que acepte el int64 de Firebase o Strings accidentales
+    public void setAnio(Object anio) {
+        if (anio instanceof Number) {
+            this.anio = ((Number) anio).intValue();
+        } else if (anio instanceof String) {
+            try {
+                this.anio = Integer.parseInt((String) anio);
+            } catch (Exception e) {
+                this.anio = 0;
+            }
+        }
+    }
+
+    public int getKilometraje() { return kilometraje; }
+
+    // Cambiamos a Object por la misma razón: seguridad total al deserializar
+    public void setKilometraje(Object kilometraje) {
+        if (kilometraje instanceof Number) {
+            this.kilometraje = ((Number) kilometraje).intValue();
+        } else if (kilometraje instanceof String) {
+            try {
+                this.kilometraje = Integer.parseInt((String) kilometraje);
+            } catch (Exception e) {
+                this.kilometraje = 0;
+            }
+        }
+    }
 }

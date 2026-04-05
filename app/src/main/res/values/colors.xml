@@ -19,6 +19,7 @@
         <item>@color/md_red_A400</item>
         <item>@color/md_red_A700</item>
     </array>
+    <color name="azul_oscuro_vehi">#0A2351</color>
     <color name="md_red_50">#ffebee</color>
     <color name="md_red_100">#ffcdd2</color>
     <color name="md_red_200">#ef9a9a</color>

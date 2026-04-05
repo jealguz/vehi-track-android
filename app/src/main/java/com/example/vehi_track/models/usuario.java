@@ -13,7 +13,7 @@ public class usuario {
     private String email;
     // Nota: En Firebase Auth la contraseña no se suele guardar en la base de datos
     // por seguridad, pero la dejamos si la necesitas para la lógica interna.
-    private String contraseña;
+    private String contrasena;
 
     /**
      * Constructor vacío: ¡REGLA DE ORO! ya que Firebase lo necesita para convertir los datos de la nube en este objeto.
@@ -57,10 +57,10 @@ public class usuario {
     }
 
     public String getContrasena() {
-        return contraseña;
+        return contrasena;
     }
 
     public void setContrasena(String contraseña) {
-        this.contraseña = contraseña;
+        this.contrasena = contraseña;
     }
 }
