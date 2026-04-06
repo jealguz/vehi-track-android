@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Centro de Alertas y Notificaciones.
- * Esta actividad consolida en una única interfaz dos fuentes de datos distintas:
- * Documentación legal (SOAT/Tecno) y Mantenimientos mecánicos pendientes.
+ * Centro de Alertas Inteligente.
+ * Consolida tres fuentes: Notificaciones manuales, Mantenimientos pendientes
+ * y el Monitor Automático de Documentos Legales (SOAT/Tecno).
  */
 public class NotificacionesActivity extends BaseActivity
         implements NotificacionAdapter.OnNotificacionClickListener {
@@ -35,14 +35,11 @@ public class NotificacionesActivity extends BaseActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. INFLADO CON HERENCIA: Mantiene la estructura del menú lateral (BaseActivity)
         establecerContenido(R.layout.activity_notificaciones);
 
         db = FirebaseFirestore.getInstance();
         idUsuario = FirebaseAuth.getInstance().getUid();
 
-        // 2. CONFIGURACIÓN DE LA BARRA DE HERRAMIENTAS
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
@@ -51,94 +48,112 @@ public class NotificacionesActivity extends BaseActivity
             }
         }
 
-        // 3. CONFIGURACIÓN DEL LISTADO (RECYCLERVIEW)
         rvNotif = findViewById(R.id.rvNotificaciones);
         rvNotif.setLayoutManager(new LinearLayoutManager(this));
         listaNotificaciones = new ArrayList<>();
 
-        // 4. INICIALIZACIÓN DEL ADAPTADOR CON ESCUCHADOR DE CLICS
-        // Se pasa 'this' como listener para manejar las acciones táctiles en cada alerta.
         adapter = new NotificacionAdapter(listaNotificaciones, this);
         rvNotif.setAdapter(adapter);
 
-        // 5. CARGA SINCRONIZADA DE DATOS
+        // Iniciamos la carga de las 3 fuentes de datos
         cargarDatosCombinados();
     }
 
     /**
-     * Gestión Multifuente:
-     * Ejecuta dos consultas simultáneas a Firestore para traer alertas legales
-     * y tareas técnicas sin realizar, garantizando una vista integral de la moto.
+     * Carga sincronizada desde 3 colecciones distintas de Firestore.
      */
     private void cargarDatosCombinados() {
         if (idUsuario == null) return;
 
-        // FLUJO 1: Alertas de Documentos (SOAT / Tecnomecánica)
+        // 1. LEER TODO DEL HISTORIAL (Aquí ya llegan SOAT y RTM desde el Dashboard)
         db.collection("notificaciones")
                 .whereEqualTo("id_usuario", idUsuario)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) return;
-                    actualizarLista(value, true);
+                    actualizarListaSimple(value, "NOTIF_RAIZ");
                 });
 
-        // FLUJO 2: Alertas de Taller (Mantenimientos que no tienen 'fecha_realizacion')
+        // 2. MANTENIMIENTOS (Para que salgan los que el mecánico no ha cerrado)
         db.collection("mantenimientos")
                 .whereEqualTo("id_usuario", idUsuario)
                 .whereEqualTo("fecha_realizacion", null)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) return;
-                    actualizarLista(value, false);
+                    actualizarListaSimple(value, "MANTO");
                 });
     }
 
-    /**
-     * Normalización de Datos (Data Mapping):
-     * Este método sincronizado combina los dos flujos de Firebase en una sola lista.
-     * Convierte objetos 'Mantenimiento' en objetos 'Notificacion' para uniformidad visual.
-     */
-    private synchronized void actualizarLista(com.google.firebase.firestore.QuerySnapshot value, boolean esNotifRaiz) {
+    private synchronized void actualizarListaSimple(com.google.firebase.firestore.QuerySnapshot value, String tipo) {
         if (value == null) return;
 
-        // LIMPIEZA SELECTIVA: Elimina registros previos según el flujo para evitar duplicidad
-        // al recibir actualizaciones en tiempo real de cualquiera de las dos colecciones.
-        if (esNotifRaiz) {
+        // Limpiamos según el tipo para evitar duplicados al actualizar en tiempo real
+        if (tipo.equals("NOTIF_RAIZ")) {
             listaNotificaciones.removeIf(n -> !n.getTitulo().startsWith("Mantenimiento:"));
         } else {
             listaNotificaciones.removeIf(n -> n.getTitulo().startsWith("Mantenimiento:"));
         }
 
         for (QueryDocumentSnapshot doc : value) {
-            if (esNotifRaiz) {
-                // Conversión directa para alertas de documentos
+            if (tipo.equals("NOTIF_RAIZ")) {
                 Notificacion n = doc.toObject(Notificacion.class);
                 n.setId(doc.getId());
                 listaNotificaciones.add(n);
             } else {
-                // ADAPTACIÓN DE MODELO: Transforma un Mantenimiento técnico en una Notificación visual
-                Mantenimiento m = doc.toObject(Mantenimiento.class);
+                // Mantenimientos técnicos
+                String servicio = doc.getString("servicio");
+                String placa = doc.getString("placa");
+                com.google.firebase.Timestamp fecha = doc.getTimestamp("fecha_programada");
+
                 Notificacion n = new Notificacion(
                         doc.getId(),
-                        "Mantenimiento: " + m.getDescripcion(),
-                        "Pendiente por realizar",
-                        m.getFecha_programada(),
-                        m.getPlaca()
+                        "Mantenimiento: " + (servicio != null ? servicio : "Revisión"),
+                        "Pendiente para placa: " + placa,
+                        fecha,
+                        placa
                 );
-                n.setIdVehiculo(m.getId_vehiculo()); // Vinculación necesaria para el modal de edición
                 listaNotificaciones.add(n);
             }
         }
 
-        // Sincronización final con la interfaz de usuario
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
     }
 
     /**
-     * Interacción con el Usuario:
-     * Al tocar una alerta, se despliega el BottomSheetDialog (Modal) para
-     * actualizar fechas o confirmar la realización de un mantenimiento.
+     * Monitor de fechas legales.
+     * Solo extrae el Timestamp y crea el objeto.
+     * El Adapter se encargará de calcular si faltan 15, 7 o si ya venció.
      */
+    private void revisarFechaDocumento(QueryDocumentSnapshot doc, String campo, String nombreDoc, String placa, long hoy, long margen) {
+        // 1. Verificamos que el campo exista en el vehículo
+        if (doc.contains(campo) && doc.get(campo) != null) {
+
+            com.google.firebase.Timestamp fechaDoc = doc.getTimestamp(campo);
+
+            if (fechaDoc != null) {
+                long fechaMs = fechaDoc.toDate().getTime();
+                long diferencia = fechaMs - hoy;
+
+                // 2. Solo agregamos a la lista si falta el margen de 15 días o ya venció
+                if (diferencia <= margen) {
+
+                    // IMPORTANTE: Según tu Modelo Notificacion(id, titulo, mensaje, fecha, idVehiculo)
+                    // Pasamos la placa en el campo 'idVehiculo' para que el Adapter la muestre.
+                    Notificacion n = new Notificacion(
+                            doc.getId(),                    // id
+                            "Vencimiento de " + nombreDoc,  // titulo
+                            "Revisión requerida para el vehículo", // mensaje base
+                            fechaDoc,                       // fecha (TIPO TIMESTAMP)
+                            placa                           // Pasamos la placa aquí
+                    );
+
+                    listaNotificaciones.add(n);
+                }
+            }
+        }
+    }
+
     @Override
     public void onNotificacionClick(Notificacion notif) {
         try {

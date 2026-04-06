@@ -72,30 +72,24 @@ public class ModalActualizarFecha extends BottomSheetDialogFragment {
      * Lógica de Negocio Centralizada:
      * Discrimina si el registro pertenece a la colección de mantenimientos o de documentos legales.
      */
+    // Ajuste en tu método actualizarEnFirebase del Modal:
     private void actualizarEnFirebase(Timestamp nuevaFecha) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // FLUJO A: Gestión de Mantenimientos
         if (notificacion.getTitulo().startsWith("Mantenimiento:")) {
-            // Se marca el mantenimiento como 'realizado' asignándole la fecha de ejecución
             db.collection("mantenimientos").document(notificacion.getId())
                     .update("fecha_realizacion", nuevaFecha)
-                    .addOnSuccessListener(aVoid -> cerrarModal("✅ Mantenimiento registrado"));
-        }
-        // FLUJO B: Gestión de Documentación Legal (SOAT / Tecnomecánica)
-        else {
-            // Actualiza el vencimiento en la colección de alertas/notificaciones
-            db.collection("notificaciones").document(notificacion.getId())
-                    .update("fecha", nuevaFecha)
-                    .addOnSuccessListener(aVoid -> cerrarModal("✅ Fecha actualizada"));
+                    .addOnSuccessListener(aVoid -> cerrarModal("✅ Mantenimiento realizado"));
+        } else {
+            // 1. Borramos la notificación de la lista de pendientes (porque ya se renovó)
+            db.collection("notificaciones").document(notificacion.getId()).delete();
 
-            // INTEGRIDAD DE DATOS (Double-Write):
-            // Si la notificación tiene una placa vinculada, se actualiza automáticamente el
-            // campo correspondiente dentro de la ficha técnica del vehículo.
+            // 2. Actualizamos la fecha real en el Vehículo
             if (notificacion.getIdVehiculo() != null) {
-                // Selección dinámica del campo según el título de la alerta
-                String campo = notificacion.getTitulo().toLowerCase().contains("soat") ? "fechaSoat" : "fechaTecno";
-                db.collection("vehiculos").document(notificacion.getIdVehiculo()).update(campo, nuevaFecha);
+                String campo = notificacion.getTitulo().toLowerCase().contains("soat") ? "fecha_soat" : "fecha_tecno";
+                db.collection("vehiculos").document(notificacion.getIdVehiculo())
+                        .update(campo, nuevaFecha)
+                        .addOnSuccessListener(aVoid -> cerrarModal("✅ Documento Renovado"));
             }
         }
     }

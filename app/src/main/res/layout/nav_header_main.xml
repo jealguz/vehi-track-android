@@ -33,7 +33,7 @@
         android:id="@+id/tvHeaderEmail"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="jeison@company.com"
+        android:text="Gestion Vehicular"
         android:textColor="#BDBDBD"/>
 
 </LinearLayout>

@@ -4,12 +4,9 @@
     <item android:drawable="@color/azul_oscuro_vehi" />
 
     <item
-        android:width="240dp"
-        android:height="240dp"
-        android:gravity="center">
-        <bitmap
-            android:src="@mipmap/vehitrack4"
-            android:filter="true"
-            android:tintMode="multiply"/> </item>
+        android:drawable="@mipmap/vehitrack4"
+        android:width="320dp"
+        android:height="320dp"
+        android:gravity="center" />
 
 </layer-list>
