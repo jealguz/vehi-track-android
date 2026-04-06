@@ -16,109 +16,84 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Actividad encargada de visualizar el historial de gastos de combustible.
- * Implementa filtros dinámicos para mostrar registros por vehículo específico o globales por usuario.
- */
 public class ListarCombustibleActivity extends BaseActivity {
 
-    // Componentes de la interfaz de usuario
     private RecyclerView rvCombustible;
     private CombustibleAdapter adapter;
     private List<Combustible> listaCombustible;
-
-    // Instancia de la base de datos Firestore
     private FirebaseFirestore db;
 
-    // Variables de contexto para filtrado de datos
-    private String idVehiculo, idUsuario;
+    // Variables de contexto
+    private String idVehiculo, idUsuario, placaVehiculo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // 1. INFLADO CON HERENCIA
-        // Se inyecta el diseño en el contenedor principal de la BaseActivity para mantener el menú lateral.
         establecerContenido(R.layout.activity_mis_combustibles);
 
         db = FirebaseFirestore.getInstance();
 
-        // SEGURIDAD: Se obtiene el identificador único del usuario logueado actualmente.
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             idUsuario = FirebaseAuth.getInstance().getCurrentUser().getUid();
         }
 
-        // CONTEXTO DE NAVEGACIÓN:
-        // Intentamos obtener el ID de una moto específica si el usuario viene de la pantalla "Detalles de Moto".
+        // --- CAMBIO AQUÍ: Recibimos tanto el ID como la PLACA opcionalmente ---
         idVehiculo = getIntent().getStringExtra("idVehiculo");
+        placaVehiculo = getIntent().getStringExtra("placa"); // Para el título
 
-        // 2. CONFIGURACIÓN DE TOOLBAR Y NAVEGACIÓN
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
 
-            // TÍTULO DINÁMICO (UX):
-            // Si el usuario filtra por una moto, el título cambia para mostrar la placa de esa moto.
-            String titulo = (idVehiculo != null) ? "Gasolina: " + idVehiculo : "Gastos de Combustible";
+            // UX: Si tenemos la placa ("BGT984"), la mostramos. Si no, mostramos el ID o el título general.
+            String identificador = (placaVehiculo != null) ? placaVehiculo : idVehiculo;
+            String titulo = (idVehiculo != null) ? "Gasolina: " + identificador : "Gastos de Combustible";
+
             getSupportActionBar().setTitle(titulo);
 
-            // Sincronización con el DrawerLayout (menú de hamburguesa) definido en la BaseActivity.
             androidx.appcompat.app.ActionBarDrawerToggle toggle = new androidx.appcompat.app.ActionBarDrawerToggle(
                     this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
             drawerLayout.addDrawerListener(toggle);
             toggle.syncState();
         }
 
-        // 3. CONFIGURACIÓN DEL RECYCLERVIEW (LISTADO)
         rvCombustible = findViewById(R.id.rvCombustible);
         if (rvCombustible != null) {
-            // Diseño lineal para el historial (uno debajo del otro)
             rvCombustible.setLayoutManager(new LinearLayoutManager(this));
             listaCombustible = new ArrayList<>();
             adapter = new CombustibleAdapter(listaCombustible);
             rvCombustible.setAdapter(adapter);
         }
 
-        // 4. ACCIÓN DE REGISTRO (FAB)
-        // El Floating Action Button permite ir a la pantalla de agregar nuevo tanqueo.
         FloatingActionButton fab = findViewById(R.id.fabAddCombustible);
         if (fab != null) {
             fab.setOnClickListener(v -> {
                 Intent intent = new Intent(this, RegistrarCombustibleActivity.class);
-                // Si ya estamos filtrando por una moto, pasamos ese ID para facilitar el registro.
                 intent.putExtra("idVehiculo", idVehiculo);
+                intent.putExtra("placa", placaVehiculo); // Pasamos la placa al registro también
                 startActivity(intent);
             });
         }
 
-        // Inicio de la carga de datos desde la nube
         obtenerGastosFirebase();
     }
 
-    /**
-     * Consulta Reactiva a Firestore:
-     * Recupera los registros de combustible ordenados por fecha de forma descendente (más recientes primero).
-     */
     private void obtenerGastosFirebase() {
         if (idUsuario == null) return;
 
         Query query;
 
-        // --- LÓGICA DE FILTRO INTELIGENTE ---
-        // Se decide la consulta según si el usuario quiere ver los gastos de una sola moto o de toda su cuenta.
+        // El filtro sigue funcionando por ID de vehículo (que es el campo estable en la DB)
         if (idVehiculo != null && !idVehiculo.isEmpty()) {
-            // Filtro por placa específica
             query = db.collection("combustible")
                     .whereEqualTo("id_vehiculo", idVehiculo)
                     .orderBy("fecha", Query.Direction.DESCENDING);
         } else {
-            // Filtro global por usuario
             query = db.collection("combustible")
                     .whereEqualTo("id_usuario", idUsuario)
                     .orderBy("fecha", Query.Direction.DESCENDING);
         }
 
-        // SnapshotListener: La lista se actualiza automáticamente si se agrega un gasto desde otro lugar.
         query.addSnapshotListener((value, error) -> {
             if (error != null) {
                 Log.e("FIRESTORE", "Error al cargar combustible: " + error.getMessage());
@@ -126,16 +101,25 @@ public class ListarCombustibleActivity extends BaseActivity {
             }
 
             if (value != null) {
-                listaCombustible.clear(); // Se limpia la lista local para evitar duplicados
+                listaCombustible.clear();
                 for (QueryDocumentSnapshot doc : value) {
-                    // Mapeo automático del documento de Firestore a la clase modelo Combustible
-                    Combustible c = doc.toObject(Combustible.class);
+                    try {
+                        Combustible c = doc.toObject(Combustible.class);
+                        c.setId_gasto_combustible(doc.getId());
 
-                    // Se captura el ID autogenerado de Firebase para futuras ediciones o eliminaciones
-                    c.setId_gasto_combustible(doc.getId());
-                    listaCombustible.add(c);
+                        // Si por alguna razón el objeto no traía la placa pero la tenemos en la actividad, se la ponemos
+                        if (c.getPlaca() == null && idVehiculo != null && idVehiculo.equals(c.getId_vehiculo())) {
+                            c.setPlaca(placaVehiculo);
+                        }
+
+                        listaCombustible.add(c);
+                    } catch (Exception e) {
+                        Log.e("ERROR_DATOS", "ID: " + doc.getId() + " malo.");
+                        Combustible errorDoc = new Combustible();
+                        errorDoc.setId_vehiculo("Error en datos");
+                        listaCombustible.add(errorDoc);
+                    }
                 }
-                // Notifica al adaptador que los datos cambiaron para refrescar la interfaz
                 adapter.notifyDataSetChanged();
             }
         });

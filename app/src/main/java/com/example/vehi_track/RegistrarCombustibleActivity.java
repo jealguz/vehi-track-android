@@ -27,19 +27,20 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Actividad para el registro de consumo de combustible.
- * Gestiona la entrada de datos técnicos (galones, costo, kilometraje) y los vincula
- * a un vehículo específico mediante una relación en Firestore.
+ * Actividad: Registro de Consumo de Combustible.
+ * Objetivo: Capturar datos técnicos de tanqueo y persistirlos en Firestore.
+ * Corregido: Se utiliza Double para asegurar compatibilidad total con Firebase y evitar errores de casteo.
+ * @author Jeison Guzman
  */
 public class RegistrarCombustibleActivity extends BaseActivity {
 
-    // Componentes de formulario
+    // Componentes visuales del formulario
     private EditText etFecha, etCantidad, etCosto, etKm;
     private AutoCompleteTextView spinnerVehiculo;
     private TextInputLayout layoutSelector;
     private MaterialButton btnGuardar;
 
-    // Servicios y variables de estado
+    // Servicios de backend y control de datos
     private FirebaseFirestore db;
     private String idVehiculo, idUsuario, placaVehiculo;
     private List<vehiculo> listaVehiculosParaSeleccionar;
@@ -48,13 +49,13 @@ public class RegistrarCombustibleActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 1. INFLADO CON ARQUITECTURA DE HERENCIA (BaseActivity)
+        // 1. HERENCIA Y UI: Inflado de vista mediante el método de BaseActivity
         establecerContenido(R.layout.activity_registrar_combustible);
 
         db = FirebaseFirestore.getInstance();
         idUsuario = FirebaseAuth.getInstance().getUid();
 
-        // Inicialización de componentes UI
+        // Vinculación de componentes con el XML
         etFecha = findViewById(R.id.etFechaCombustible);
         etCantidad = findViewById(R.id.etGalones);
         etCosto = findViewById(R.id.etCostoCombustible);
@@ -63,46 +64,39 @@ public class RegistrarCombustibleActivity extends BaseActivity {
         spinnerVehiculo = findViewById(R.id.spinnerVehiculoComb);
         layoutSelector = findViewById(R.id.layoutSelectorVehiculoComb);
 
-        // 2. CONFIGURACIÓN DE BARRA DE HERRAMIENTAS Y MENÚ
+        // 2. NAVEGACIÓN: Configuración de Toolbar sincronizada con el Drawer
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
             setSupportActionBar(toolbar);
             getSupportActionBar().setTitle("Registrar Tanqueo");
 
-            // Sincronización con el menú lateral de la aplicación
             androidx.appcompat.app.ActionBarDrawerToggle toggle = new androidx.appcompat.app.ActionBarDrawerToggle(
                     this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
             drawerLayout.addDrawerListener(toggle);
             toggle.syncState();
         }
 
-        // 3. LÓGICA DE INTERFAZ DINÁMICA (UX):
-        // Se recupera el contexto de navegación desde el Intent.
+        // 3. LÓGICA DE CONTEXTO:
+        // Si venimos de la pantalla "Detalle de Vehículo", ya tenemos el ID y la Placa.
         idVehiculo = getIntent().getStringExtra("idVehiculo");
         placaVehiculo = getIntent().getStringExtra("placa");
 
         if (idVehiculo != null) {
-            // OPTIMIZACIÓN: Si el usuario ya seleccionó una moto previamente, se oculta el selector
-            // para agilizar el proceso de registro (Evita redundancia).
+            // Se oculta el selector para mejorar la experiencia de usuario (UX) si el vehículo ya es conocido.
             layoutSelector.setVisibility(View.GONE);
         } else {
-            // Si el acceso es general, se consultan los vehículos del usuario para llenar el selector.
+            // Si el usuario entra directamente, cargamos su lista de vehículos.
             cargarVehiculosUsuario();
         }
 
-        // 4. CONFIGURACIÓN DE EVENTOS (LISTENERS)
+        // 4. LISTENERS: Eventos de interacción
         etFecha.setOnClickListener(v -> mostrarDatePicker());
         btnGuardar.setOnClickListener(v -> guardarEnFirestore());
-
-        // Botón opcional de retorno rápido
-        if (findViewById(R.id.btnBack) != null) {
-            findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-        }
     }
 
     /**
-     * Carga de datos para el Selector (Dropdown):
-     * Recupera la flota del usuario para poblar el AutoCompleteTextView.
+     * Consultas a Firestore:
+     * Obtiene los vehículos vinculados al UID del usuario activo para llenar el dropdown.
      */
     private void cargarVehiculosUsuario() {
         listaVehiculosParaSeleccionar = new ArrayList<>();
@@ -116,16 +110,14 @@ public class RegistrarCombustibleActivity extends BaseActivity {
                         if (v != null) {
                             v.setId_vehiculo(doc.getId());
                             listaVehiculosParaSeleccionar.add(v);
-                            // Formato amigable para el usuario: "Placa - Marca"
                             nombres.add(v.getPlaca() + " - " + v.getMarca());
                         }
                     }
-                    // Uso de adaptador estándar para el despliegue de la lista
+                    // Adaptador para el selector visual
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                             android.R.layout.simple_list_item_1, nombres);
                     spinnerVehiculo.setAdapter(adapter);
 
-                    // Captura de selección para obtener el ID real del vehículo
                     spinnerVehiculo.setOnItemClickListener((parent, view, position, id) -> {
                         vehiculo sel = listaVehiculosParaSeleccionar.get(position);
                         idVehiculo = sel.getId_vehiculo();
@@ -135,21 +127,20 @@ public class RegistrarCombustibleActivity extends BaseActivity {
     }
 
     /**
-     * Interfaz de Selección de Fecha:
-     * Despliega un componente nativo de Android para asegurar el formato de fecha correcto.
+     * Selector de Fecha:
+     * Implementa un DatePickerDialog para evitar errores manuales en el formato de fecha.
      */
     private void mostrarDatePicker() {
         Calendar c = Calendar.getInstance();
         new DatePickerDialog(this, (view, year, month, day) -> {
-            // Formateo de fecha con ceros a la izquierda (dd/MM/yyyy)
             String fechaSel = String.format(Locale.getDefault(), "%02d/%02d/%d", day, (month + 1), year);
             etFecha.setText(fechaSel);
         }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show();
     }
 
     /**
-     * Persistencia de Datos:
-     * Valida, parsea y envía la información del tanqueo a Firebase Firestore.
+     * Lógica Principal de Persistencia:
+     * Procesa la información, realiza el parseo de tipos y guarda en la nube.
      */
     private void guardarEnFirestore() {
         String fechaStr = etFecha.getText().toString().trim();
@@ -157,47 +148,49 @@ public class RegistrarCombustibleActivity extends BaseActivity {
         String costoStr = etCosto.getText().toString().trim();
         String kmStr = etKm.getText().toString().trim();
 
-        // VALIDACIÓN DE SEGURIDAD: Previene documentos incompletos en la DB
+        // Validación de integridad de datos
         if(fechaStr.isEmpty() || cantStr.isEmpty() || costoStr.isEmpty() || kmStr.isEmpty() || idVehiculo == null){
-            Toast.makeText(this, "⚠️ Selecciona un vehículo y completa los campos", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "⚠️ Completa todos los campos", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
-            // CONVERSIÓN DE TIPOS: Paso de String a Date y luego a Timestamp de Google
+            // Conversión de formato de fecha a Timestamp (requerido para ordenamiento en Firestore)
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
             Date fechaDate = sdf.parse(fechaStr);
             Timestamp fechaTimestamp = new Timestamp(fechaDate);
 
-            // MAPEADO DE DATOS: Estructura de mapa para asegurar los tipos numéricos en Firestore
+            /**
+             * IMPORTANTE: Se utiliza Double.parseDouble() para cantidad y costo.
+             * Esto soluciona el error Fatal Exception de deserialización, alineando
+             * los datos con el tipo 'Number' de Firestore y el modelo Java.
+             */
             java.util.Map<String, Object> data = new java.util.HashMap<>();
             data.put("fecha", fechaTimestamp);
-            data.put("cantidad", Float.parseFloat(cantStr)); // Litros/Galones como Float
-            data.put("costo", Float.parseFloat(costoStr));     // Moneda como Float
-            data.put("kilometraje", Integer.parseInt(kmStr)); // Kilómetros como Integer
+            data.put("cantidad", Double.parseDouble(cantStr)); // Cambio a Double
+            data.put("costo", Double.parseDouble(costoStr));     // Cambio a Double
+            data.put("kilometraje", Integer.parseInt(kmStr));
             data.put("id_vehiculo", idVehiculo);
             data.put("placa", placaVehiculo);
             data.put("id_usuario", idUsuario);
 
-            // UX: Desactivar botón para evitar registros duplicados por clics múltiples
             btnGuardar.setEnabled(false);
             btnGuardar.setText("Guardando...");
 
             db.collection("combustible")
                     .add(data)
                     .addOnSuccessListener(doc -> {
-                        Toast.makeText(this, "✅ Tanqueo registrado correctamente", Toast.LENGTH_SHORT).show();
-                        finish(); // Cierra la actividad al completar la tarea
+                        Toast.makeText(this, "✅ Tanqueo registrado exitosamente", Toast.LENGTH_SHORT).show();
+                        finish();
                     })
                     .addOnFailureListener(e -> {
                         btnGuardar.setEnabled(true);
                         btnGuardar.setText("Guardar");
-                        Toast.makeText(this, "❌ Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "❌ Error de conexión", Toast.LENGTH_SHORT).show();
                     });
 
         } catch (ParseException | NumberFormatException e) {
-            // Gestión de errores de entrada de usuario
-            Toast.makeText(this, "❌ Revisa los números y la fecha", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "❌ Formato numérico inválido", Toast.LENGTH_SHORT).show();
         }
     }
 }
