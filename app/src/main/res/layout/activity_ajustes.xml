@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F9FA">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbarAjustes"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#0A2351"
+        app:title="Configuración"
+        app:titleTextColor="#FFFFFF" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cuenta"
+                android:textColor="#0A2351"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEditarPerfil"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:text="Editar Perfil"
+                        android:gravity="start|center_vertical"
+                        android:paddingStart="16dp"
+                        android:textColor="#424242"
+                        app:icon="@drawable/ic_account_circle"
+                        app:iconTint="#0A2351"/>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCambiarClave"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:text="Cambiar Contraseña"
+                        android:gravity="start|center_vertical"
+                        android:paddingStart="16dp"
+                        android:textColor="#424242"
+                        app:icon="@drawable/ic_lock"
+                        app:iconTint="#0A2351"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Preferencias"
+                android:textColor="#0A2351"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchNotificaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Notificaciones de Vencimiento"
+                        android:padding="12dp"
+                        android:checked="true"/>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE"/>
+
+                    <TextView
+                        android:id="@+id/tvAcercaDe"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Acerca de Vehi-Track"
+                        android:padding="16dp"
+                        android:textColor="#424242"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Versión 1.0.0 - 2026"
+                android:gravity="center"
+                android:layout_marginTop="32dp"
+                android:textColor="#999999"
+                android:textSize="12sp"/>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

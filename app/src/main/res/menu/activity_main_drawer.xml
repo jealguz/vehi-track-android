@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_inicio"
+            android:icon="@drawable/ic_home"
+            android:title="Inicio" />
+        <item
+            android:id="@+id/nav_reportes"
+            android:icon="@drawable/ic_report"
+            android:title="Reportes" />
+        <item
+            android:id="@+id/nav_vehiculo"
+            android:icon="@drawable/ic_directions_car"
+            android:title="Vehículos" />
+        <item
+            android:id="@+id/nav_registrar_vehiculo"
+            android:icon="@drawable/ic_car_gear"
+            android:title="Registrar vehículo" />
+        <item
+            android:id="@+id/nav_mis_mantenimientos"
+            android:icon="@drawable/ic_event"
+            android:title="Ver Mantenimientos" />
+        <item
+            android:id="@+id/nav_registrar_mantenimiento"
+            android:icon="@drawable/ic_build"
+            android:title="Registrar Mantenimiento" />
+        <item
+            android:id="@+id/nav_gasto_combustible"
+            android:icon="@drawable/ic_gas_station"
+            android:title="Gastos combustible" />
+        <item
+            android:id="@+id/nav_registrar_combustible"
+            android:icon="@drawable/ic_gas_meter"
+            android:title="Registrar Gastos combustible" />
+        <item
+            android:id="@+id/nav_talleres_cercanos"
+            android:icon="@drawable/ic_repair_service"
+            android:title="Ver Talleres Cercanos" />
+        <item
+            android:id="@+id/nav_notificaciones"
+            android:icon="@drawable/ic_notification_multiple"
+            android:title="Notificaciones" />
+        <item
+            android:id="@+id/nav_reporte_pdf"
+            android:icon="@drawable/ic_picture_as_pdf"
+            android:title="Reporte PDF" />
+    </group>
+
+    <item android:title="Opciones">
+        <menu>
+            <item
+                android:id="@+id/nav_ajustes"
+                android:icon="@drawable/ic_settings"
+                android:title="Ajustes" />
+            <item
+                android:id="@+id/nav_cerrar_sesion"
+                android:icon="@drawable/ic_exit_to_app"
+                android:title="Cerrar Sesión" />
+        </menu>
+    </item>
+</menu>

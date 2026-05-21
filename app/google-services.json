@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "404426858780",
+    "project_id": "vehitrack-android",
+    "storage_bucket": "vehitrack-android.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:404426858780:android:ff2877070a83fa73381ad9",
+        "android_client_info": {
+          "package_name": "com.example.vehi_track"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "404426858780-7g6fuodvuplem2urh4t5p4fspol9d2kg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vehi_track",
+            "certificate_hash": "7042ee25c56bce57978814fa121c2f64acb805f7"
+          }
+        },
+        {
+          "client_id": "404426858780-vi292j3hctoffgkeolpv4tio08a3t593.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBECsw8wUohIvlEqcjMi_HwjLq10-nwoUg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "404426858780-vi292j3hctoffgkeolpv4tio08a3t593.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
